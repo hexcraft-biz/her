@@ -11,10 +11,7 @@ type errInterface struct {
 }
 
 func (e errInterface) Error() string {
-	if e.text != nil {
-		return *e.text
-	}
-	return ""
+	return *e.text
 }
 
 // ================================================================
