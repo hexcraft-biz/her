@@ -6,19 +6,15 @@ import (
 	"net/http"
 )
 
-type Err struct {
+type errInterface struct {
 	text *string
 }
 
-func (e Err) Error() string {
+func (e errInterface) Error() string {
 	if e.text != nil {
 		return *e.text
 	}
 	return ""
-}
-
-func (e Err) Is(target error) bool {
-	return e == target
 }
 
 // ================================================================
@@ -35,15 +31,27 @@ func NewPayload(result any) *Payload {
 	}
 }
 
-type Her struct {
+type Error struct {
 	StatusCode int
 	*Payload
-	*Err
+	*errInterface
+}
+
+func (e Error) Is(target error) bool {
+	return e == target
+}
+
+func (e Error) HttpR() (int, *Payload) {
+	if e.StatusCode == http.StatusNoContent {
+		return e.StatusCode, nil
+	} else {
+		return e.StatusCode, e.Payload
+	}
 }
 
 // ================================================================
-func New(code int, result any) *Her {
-	r := &Her{
+func New(code int, result any) *Error {
+	e := &Error{
 		StatusCode: code,
 		Payload: &Payload{
 			Message: http.StatusText(code),
@@ -52,15 +60,15 @@ func New(code int, result any) *Her {
 	}
 
 	if code >= 400 {
-		r.Err = &Err{text: &r.Message}
+		e.errInterface = &errInterface{text: &e.Message}
 	}
 
-	return r
+	return e
 }
 
-// Return an *Her with err passing in. return nil if err is nil.
-func NewError(code int, err error, result any) *Her {
-	var her *Her
+// Return an *Error with err passing in. return nil if err is nil.
+func NewError(code int, err error, result any) *Error {
+	var her *Error
 
 	if err != nil {
 		her = NewErrorWithMessage(code, err.Error(), result)
@@ -70,8 +78,8 @@ func NewError(code int, err error, result any) *Her {
 }
 
 // ================================================================
-func NewErrorWithMessage(code int, msg string, result any) *Her {
-	her := &Her{
+func NewErrorWithMessage(code int, msg string, result any) *Error {
+	her := &Error{
 		StatusCode: code,
 		Payload: &Payload{
 			Message: msg,
@@ -79,7 +87,7 @@ func NewErrorWithMessage(code int, msg string, result any) *Her {
 		},
 	}
 
-	her.Err = &Err{text: &her.Payload.Message}
+	her.errInterface = &errInterface{text: &her.Payload.Message}
 	return her
 }
 
@@ -110,23 +118,15 @@ var (
 // ================================================================
 //
 // ================================================================
-func (r Her) HttpR() (int, *Payload) {
-	if r.StatusCode == http.StatusNoContent {
-		return r.StatusCode, nil
-	} else {
-		return r.StatusCode, r.Payload
-	}
-}
-
-func Assert(err error) *Her {
-	if her, ok := err.(*Her); ok {
+func Assert(err error) *Error {
+	if her, ok := err.(*Error); ok {
 		return her
 	} else {
 		return nil
 	}
 }
 
-func FetchHexcApiResult(resp *http.Response, payload *Payload) *Her {
+func FetchHexcApiResult(resp *http.Response, payload *Payload) *Error {
 	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(payload); err != nil {
