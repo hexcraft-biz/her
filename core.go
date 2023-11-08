@@ -89,15 +89,15 @@ func NewErrorWithMessage(code int, msg string, result any) *Error {
 }
 
 var (
-	ErrBadRequest          = NewErrorWithMessage(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), nil)
-	ErrUnauthorized        = NewErrorWithMessage(http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), nil)
-	ErrForbidden           = NewErrorWithMessage(http.StatusForbidden, http.StatusText(http.StatusForbidden), nil)
-	ErrNotFound            = NewErrorWithMessage(http.StatusNotFound, http.StatusText(http.StatusNotFound), nil)
-	ErrConflict            = NewErrorWithMessage(http.StatusConflict, http.StatusText(http.StatusConflict), nil)
-	ErrGone                = NewErrorWithMessage(http.StatusGone, http.StatusText(http.StatusGone), nil)
-	ErrUnprocessableEntity = NewErrorWithMessage(http.StatusUnprocessableEntity, http.StatusText(http.StatusUnprocessableEntity), nil)
-	ErrServiceUnavailable  = NewErrorWithMessage(http.StatusServiceUnavailable, http.StatusText(http.StatusServiceUnavailable), nil)
-	ErrInternalServerError = NewErrorWithMessage(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), nil)
+	ErrBadRequest          = New(http.StatusBadRequest, nil)
+	ErrUnauthorized        = New(http.StatusUnauthorized, nil)
+	ErrForbidden           = New(http.StatusForbidden, nil)
+	ErrNotFound            = New(http.StatusNotFound, nil)
+	ErrConflict            = New(http.StatusConflict, nil)
+	ErrGone                = New(http.StatusGone, nil)
+	ErrUnprocessableEntity = New(http.StatusUnprocessableEntity, nil)
+	ErrServiceUnavailable  = New(http.StatusServiceUnavailable, nil)
+	ErrInternalServerError = New(http.StatusInternalServerError, nil)
 
 	Errs = errors.Join(
 		ErrBadRequest,
