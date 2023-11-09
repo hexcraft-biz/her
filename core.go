@@ -6,6 +6,16 @@ import (
 	"net/http"
 )
 
+// ================================================================
+//
+// ================================================================
+type Error interface {
+	Error() string
+	Is(error) bool
+	HttpR() (int, *Payload)
+}
+
+// ================================================================
 type errInterface struct {
 	text *string
 }
@@ -14,8 +24,6 @@ func (e errInterface) Error() string {
 	return *e.text
 }
 
-// ================================================================
-//
 // ================================================================
 type Payload struct {
 	Message string `json:"message"`
@@ -28,17 +36,17 @@ func NewPayload(result any) *Payload {
 	}
 }
 
-type Error struct {
+type Err struct {
 	StatusCode int
 	*Payload
 	*errInterface
 }
 
-func (e Error) Is(target error) bool {
+func (e Err) Is(target error) bool {
 	return e == target
 }
 
-func (e Error) HttpR() (int, *Payload) {
+func (e Err) HttpR() (int, *Payload) {
 	if e.StatusCode == http.StatusNoContent {
 		return e.StatusCode, nil
 	} else {
@@ -47,8 +55,8 @@ func (e Error) HttpR() (int, *Payload) {
 }
 
 // ================================================================
-func New(code int, result any) *Error {
-	e := &Error{
+func New(code int, result any) Error {
+	e := &Err{
 		StatusCode: code,
 		Payload: &Payload{
 			Message: http.StatusText(code),
@@ -63,20 +71,17 @@ func New(code int, result any) *Error {
 	return e
 }
 
-// Return an *Error with err passing in. return nil if err is nil.
-func NewError(code int, err error, result any) *Error {
-	var her *Error
-
+// Return an Error with err passing in. return nil if err is nil.
+func NewError(code int, err error, result any) Error {
 	if err != nil {
-		her = NewErrorWithMessage(code, err.Error(), result)
+		return NewErrorWithMessage(code, err.Error(), result)
 	}
-
-	return her
+	return nil
 }
 
 // ================================================================
-func NewErrorWithMessage(code int, msg string, result any) *Error {
-	her := &Error{
+func NewErrorWithMessage(code int, msg string, result any) Error {
+	her := &Err{
 		StatusCode: code,
 		Payload: &Payload{
 			Message: msg,
@@ -115,15 +120,15 @@ var (
 // ================================================================
 //
 // ================================================================
-func Assert(err error) *Error {
-	if her, ok := err.(*Error); ok {
+func Assert(err error) Error {
+	if her, ok := err.(Error); ok {
 		return her
 	} else {
 		return nil
 	}
 }
 
-func FetchHexcApiResult(resp *http.Response, payload *Payload) *Error {
+func FetchHexcApiResult(resp *http.Response, payload *Payload) Error {
 	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(payload); err != nil {
